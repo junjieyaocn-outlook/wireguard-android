@@ -68,7 +68,9 @@ object PortRotation {
     }
 
     private fun withPort(host: String, port: Int): String =
-        (if (':' in host) "[$host]" else host) + ":$port"
+        // InetEndpoint.getHost() keeps the brackets on IPv6 literals (e.g. "[2001:db8::1]"),
+        // so only add them when missing.
+        (if (':' in host && !host.startsWith("[")) "[$host]" else host) + ":$port"
 
     /**
      * Schedules the next rotation at the coming 04:00 local time using an exact
