@@ -108,6 +108,18 @@ class Application : android.app.Application() {
         }
         tunnelManager = TunnelManager(FileConfigStore(applicationContext))
         tunnelManager.onCreate()
+        // Client-side follow-up for the server's daily 04:00 port rotation: align the
+        // peer endpoint ports of wg_ tunnels with today's port on startup (catches a
+        // rotation missed while the device was off or asleep), then arm the daily alarm.
+        // DOWN tunnels are left down; only their stored configuration is updated.
+        PortRotation.scheduleNext(this)
+        applicationScope.launch {
+            try {
+                PortRotation.rotateAll()
+            } catch (e: Throwable) {
+                Log.e(TAG, "Startup endpoint-port alignment failed", e)
+            }
+        }
         coroutineScope.launch(Dispatchers.IO) {
             try {
                 backend = determineBackend()
